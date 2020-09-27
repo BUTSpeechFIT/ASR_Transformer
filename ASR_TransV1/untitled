@@ -1,0 +1,146 @@
+
+USE_GPU=0
+mixing_factor=8
+beam=1
+learning_rate_scale=0.1
+spec_augument=1
+char_bpe_flag='bpe'
+
+
+retrain_final_layer='Train'
+no_of_tokens=500
+min_F_bands=3;max_F_bands=80
+time_drop_max=6;time_window_max=6
+
+AM_config="/mnt/matylda3/vydana/HOW2_EXP/OPENSAT2020/AM_config/LIB_512_8H.org"
+#=======================>
+##BPE_SpecAug---30.67----model_epoch_11_sample_40000_0.6729518244624138__0.026666666666666616
+##BPE----31.58------model_epoch_19_sample_60000_0.6775207241962353__0.0314569536423841
+#Spec_AUG_CHAR----32.42 ---model_epoch_25_sample_60000_0.3947041095311443__0.006479481641468721
+#=======================>
+
+
+weight="/mnt/matylda3/vydana/HOW2_EXP/OPENSAT2020/models/ft_BPE500_SpecAug_BPE30.67_ASR_lrscale0.1_corrected_unk_trans_fintng_2_5_30_80_1_4_retrain_final_layer_iwslt/model_epoch_30_sample_150001_0.0210994843051411___0.7883029713323622__0.15228426395939088"
+steps="1"
+model_file="OPENSAT_ASR_CHAR_FROM_IWSLT_512MODEL_lrscale0.1_Specaug80_6_6_unk_hes_Nonorm_All_UNK"$max_F_bands"_"$time_drop_max"_"$time_window_max"_retrain_tokens_$no_of_tokens"
+model_dir="models/$model_file"
+weight_file="weight_files/$model_file"
+Res_file="weight_files/$model_file"_Res
+mkdir -pv $model_dir
+#weight="$model_dir/$weight"
+
+
+if [[ ! -w $weight_file ]]; then touch $weight_file; fi
+if [[ ! -w $Res_file ]]; then touch $Res_file; fi
+echo "$model_dir"
+echo "$weight_file"
+echo "$Res_file"
+
+
+stdbuf -o0 python OPENSAT_ASR_CHAR_FROM_IWSLT_MODEL_V2_Nohes_Nonorm.py $USE_GPU $model_dir $weight_file $Res_file $mixing_factor $beam $weight $steps $learning_rate_scale $spec_augument $char_bpe_flag $retrain_final_layer $no_of_tokens $min_F_bands $max_F_bands $time_drop_max $time_window_max $AM_config
+
+
+
+val_history: [ 0.         67.07141559 47.73831931 27.75310354 19.44936255 16.66222378
+ 15.43012731 14.59055192 14.80156693 14.23682692 13.81412217 13.87485516
+ 13.64633184   13.5347173  13.85168174
+ 13.69780486   13.51712726 13.54772173 13.73690547
+ 13.73443618   13.53030063 ]
+
+
+13.27982593 i
+13.22467572 model_epoch_20_sample_100001_0.02826246934410758___0.8658206852043376__0.18487394957983194
+13.38007526 model_epoch_14_sample_70001_0.04206633741980857___0.8373056863539318__0.1282051282051282
+13.46887313 model_epoch_16_sample_80001_0.036268635161425075___0.8512940542585046__0.125
+13.46888244 model_epoch_26_sample_130001_0.021235739768655018___0.8848077580773619__0.11858974358974361
+13.47339346 model_epoch_13_sample_65001_0.04582484392449976___0.8386986572952831__0.18487394957983194
+13.49506749 model_epoch_19_sample_95001_0.030004080380303343___0.8737794545275219__0.11538461538461542
+13.50419392 
+
+
+
+
+
+
+python /mnt/matylda3/vydana/HOW2_EXP/IWSLT2020/Decode_ASR_BPE_mulitHyp_basecode_loop.py
+1.decoding_job.1.scp
+ 2.10
+  3.0
+   4.1 
+   5.1.0 
+  6. 1
+    7./mnt/matylda3/vydana/kaldi/egs/OPENSAT_2020/scp_dev_eval_seg2
+     8./mnt/matylda3/vydana/HOW2_EXP/OPENSAT2020/models/OPENSAT_ASR_CHAR_FROM_IWSLT_512MODEL_lrscale0.1_Specaug80_6_6_unk_hes_Nonorm_All_UNK_checkpoint_ensembling_80_6_6_retrain_tokens_500/Checkpoints_epoch_136
+      9.bpe
+       10./mnt/matylda3/vydana/HOW2_EXP/OPENSAT2020/models/opensat_safet_models_500_bpe__unk_hes_Nonorm_All_UNK_10L_1024_8H_5000/Checkpoints_epoch_21__10.08_10.44_10.44_10.49_10.65
+       11./mnt/matylda3/vydana/HOW2_EXP/OPENSAT2020/LM_config/SAFET_10L_1024_8H.org
+        12. 100
+
+
+        class Conv_2D_Layers(nn.Module):
+        def __init__(self, input_size, output_size,kernel_size,stride,in_channels,out_channels):
+                super(Conv_2D_Layers, self).__init__()
+                self.input_size =int(input_size)
+                self.output_size=int(output_size)
+                self.kernel_size=kernel_size
+                self.stride=stride
+                self.in_channels=int(in_channels)
+                self.out_channels=int(out_channels)
+
+                #------------------------------------
+                self.dropout = nn.Dropout(0.1)
+                #---------------------------------------------------------------------------------------
+                self.conv1=torch.nn.Conv2d(in_channels=self.in_channels, out_channels=self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=1, dilation=1, groups=1, bias=True)
+                self.conv2=torch.nn.Conv2d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=1, dilation=1, groups=1, bias=True)
+
+                linear_in_size=math.ceil(self.out_channels*(math.ceil(self.input_size/4)))
+                self.linear_out=nn.Linear(linear_in_size, self.output_size)               
+        def forward(self, input):
+
+                CV1=F.relu(self.conv1(input.unsqueeze(1)))
+                #----------------------------------------
+                CV2=F.relu(self.conv2(CV1))
+                #-----------------------------------------
+
+                conv_output=CV2
+                b, c, t, f = conv_output.size()
+                conv_output=conv_output.transpose(1,2).contiguous().view(b,t,c*f)
+                #------------------------------------
+                lin_conv_output=self.linear_out(conv_output)
+                #------------------------------------
+                return lin_conv_output
+##################################################################
+###########################################################3    
+class Res_LSTM_layers(nn.Module):
+        def __init__(self, hidden_size, n_layers,dropout,if_residual):
+                super(Res_LSTM_layers, self).__init__()
+                self.hidden_size = hidden_size
+                self.n_layers = n_layers
+                self.dropout=dropout
+                #------------------------------
+                self.LSTM_layer = nn.LSTM(self.hidden_size,self.hidden_size,1,batch_first=False,bidirectional=True,dropout=self.dropout)
+                self.PROJ_Layer = nn.Linear(self.hidden_size*2, self.hidden_size)
+                self.Dropout_layer = nn.Dropout(p=self.dropout)
+                #------------------------------
+        def forward(self,input ):
+                ipt=input.transpose(0,1)
+                lstm_output, hidden1 = self.LSTM_layer(ipt)
+                dr_proj_lstm_output = self.Dropout_layer(self.PROJ_Layer(lstm_output))
+                if if_residual:
+                    dr_proj_lstm_output = dr_proj_lstm_output + input
+                return dr_proj_lstm_output+ipt
+#=======================================================================
+#=======================================================================
+
+dict_keys(['103-1240-0000', '103-1240-0001', '103-1240-0002', '103-1240-0003', '103-1240-0004', '103-1240-0005', '103-1240-0006', '103-1240-0007', '103-1240-0008', '103-1240-0009', '103-1240-0010', '103-1240-0011', '103-1240-0012', '103-1240-0013', '103-1240-0014', '103-1240-0015', '103-1240-0016', '103-1240-0017', '103-1240-0018', '103-1240-0019', '103-1240-0020', '103-1240-0021', '103-1240-0022', '103-1240-0023', '103-1240-0024', '103-1240-0025', '103-1240-0026', '103-1240-0027', '103-1240-0028', '103-1240-0029', '103-1240-0030', '103-1240-0031', '103-1240-0032', '103-1240-0033', '103-1240-0034', '103-1240-0035', '103-1240-0036', '103-1240-0037', '103-1240-0038', '103-1240-0039', '103-1240-0040', '103-1240-0041', '103-1240-0042', '103-1240-0043', '103-1240-0044', '103-1240-0045', '103-1240-0046', '103-1240-0047', '103-1240-0048', '103-1240-0049', '103-1240-0050', '103-1240-0051', '103-1240-0052', '103-1240-0053', '103-1240-0054', '103-1240-0055', '103-1240-0056', '103-1240-0057', '103-1241-0000', '103-1241-0001', '103-1241-0002', '103-1241-0003', '103-1241-0004', '103-1241-0005', '103-1241-0006', '103-1241-0007', '103-1241-0008', '103-1241-0009', '103-1241-0010', '103-1241-0011', '103-1241-0012', '103-1241-0013', '103-1241-0014', '103-1241-0015', '103-1241-0016', '103-1241-0017', '103-1241-0018', '103-1241-0019', '103-1241-0020', '103-1241-0021', '103-1241-0022', '103-1241-0023', '103-1241-0024', '103-1241-0025', '103-1241-0026', '103-1241-0027', '103-1241-0028', '103-1241-0029', '103-1241-0030', '103-1241-0031', '103-1241-0032', '103-1241-0033', '103-1241-0034', '103-1241-0035', '103-1241-0036', '103-1241-0037', '103-1241-0038', '103-1241-0039', '103-1241-0040', '103-1241-0041'])
+
+
+Char_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model'
+Word_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model'
+Word_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model'
+Char_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model'
+text_file='/mnt/matylda3/vydana/benchmarking_datasets/Timit/All_text'
+train_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/scp_files/train/'
+dev_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/scp_files/dev/'
+
+Namespace(Char_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model', Res_text_file='weight_files/Timit_Conv_Res_LSTM_3layers_320_Res', Word_model_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/models/Timit_PHSEQ_100/Timit_PHSEQ__100__word.model', batch_size=10, char_space_token=3, clip_grad_norm=5.0, compute_ctc=True, conv_dropout=0.1, ctc_target_type='word', ctc_weight=0.3, dev_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/scp_files/dev/', early_stopping=True, early_stopping_checkpoints=5, encoder_dropout=0.1, encoder_layers=1.0, gpu=1, hidden_size=320, in_channels=1, input_size=249, isresidual=True, kernel_size=3, label_smoothing=0.1, learning_rate=0.0003, lstm_dropout=0.3, max_F_bands=80, max_batch_label_len=50000, max_batch_len=20, max_train_examples=23380, max_val_examples=400, min_F_bands=30, model_dir='models/Timit_Conv_Res_LSTM_3layers_320', n_layers=2, nepochs=100, new_bob_decay=0, no_of_Char_tokens=None, no_of_Word_tokens=None, no_of_checkpoints=2, noise_inj_ratio=0.1, out_channels=64, pre_trained_weight='0', spec_aug_flag=True, spell_loss_perbatch=False, square=2, steps=1, stride=2, teacher_force=0.6, text_file='/mnt/matylda3/vydana/benchmarking_datasets/Timit/All_text', time_drop_max=4, time_window_max=4, tr_disp=100, train_path='/mnt/matylda3/vydana/benchmarking_datasets/Timit/scp_files/train/', use_speller=False, use_word=True, val_batch_size=10, validate_interval=200, verbosity=None, vl_disp=100, weight_noise_flag=0, weight_text_file='weight_files/Timit_Conv_Res_LSTM_3layers_320', word_unk_token=0, **{'retrain_the last layer': 'False'})
