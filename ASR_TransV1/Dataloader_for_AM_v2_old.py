@@ -16,8 +16,8 @@ import glob
 
 import sys
 sys.path.insert(0, '/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
-import CMVN
-from CMVN import CMVN
+import batch_generators.CMVN
+from batch_generators.CMVN import CMVN
 from Load_sp_model import Load_sp_models
 
 
@@ -77,8 +77,8 @@ class DataLoader(object):
         smp_feat=pad_sequences(self.batch_data,maxlen=max(self.batch_length),dtype='float32',padding='post',value=0.0)
         smp_char_labels=pad_sequences(self.batch_labels,maxlen=max(self.batch_label_length),dtype='int32',padding='post',value=self.Char_padding_id) 
         smp_word_label=pad_sequences(self.batch_word_labels,maxlen=max(self.batch_word_label_length),dtype='int32',padding='post',value=self.Word_padding_id)
-        smp_trans_text=pad_sequences(self.batch_word_text, maxlen=max(self.batch_word_text_length),dtype=object,padding='post',value=' ')
-        smp_trans_text_tgt=pad_sequences(self.batch_word_text_tgt, maxlen=max(self.batch_word_text_length_tgt),dtype=object,padding='post',value=' ')
+        smp_trans_text=pad_sequences(self.batch_word_text, maxlen=max(self.batch_word_text_length),dtype=object,padding='post',value='')
+        smp_trans_text_tgt=pad_sequences(self.batch_word_text_tgt, maxlen=max(self.batch_word_text_length_tgt),dtype=object,padding='post',value='')
 
         batch_data_dict={
             'smp_names':self.batch_names,
@@ -100,9 +100,7 @@ class DataLoader(object):
         while True:
             self.__reset_the_data_holders()
             max_batch_label_len = self.max_batch_label_len
-            random.shuffle(self.files)
             for inp_file in self.files:
-                #print(self.files)
                 with open(inp_file) as f:
                     for line in f:
                         #============================

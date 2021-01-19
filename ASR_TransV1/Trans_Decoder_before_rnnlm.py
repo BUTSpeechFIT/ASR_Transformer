@@ -268,7 +268,7 @@ class Decoder(nn.Module):
                 ASR_dec_output=ASR_dec_output.view(batch_size*hyps,-1,dec_output_Bneck_org.size(2))
                 return ASR_dec_output
 ################################################################################################################
-    def prediction_from_trained_model_beam_Search(self,i,ys,score_1,AM_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used=0,RNNLM_states=None):
+    def prediction_from_trained_model_beam_Search(self,i,ys,score_1,AM_local_scores,beam,hyps,gamma,batch_size):
             """
             ####vecotorized beam-search ===>beam search that happens parllelly i.e., 
             1.Each prefix is treated as a invidual sequence when given to the model and the predictions for each prefixes are obtained;
@@ -279,8 +279,9 @@ class Decoder(nn.Module):
 
             #folded accordingly and the beam of new
             """
+
             if i==0:
-                
+
                 ###for the first time just repeat the hyps and add the beam to the hyposhesis 
                 local_best_scores, local_best_ids = torch.topk(AM_local_scores, hyps, dim=1,largest=True,sorted=True)
                 #---------------------
@@ -327,14 +328,9 @@ class Decoder(nn.Module):
                 local_best_scores=local_best_scores-(not_eos_mask*1*~EOS_SCORE_MASK*1000.0)        
                 #--------------------------------------------------------              
                 #repeat the prefixes beam times
+
                 ys_1=torch.repeat_interleave(ys,beam,0)
                 score_2=torch.repeat_interleave(score_1,beam,0)
-                
-                #breakpoint()
-                #hin,cin = RNNLM_states
-                #hout=torch.repeat_interleave(hin,beam,1)
-                #cout=torch.repeat_interleave(cin,beam,1)               
-                 
                 #----------------------------------------------------
                 present_ids=(local_best_ids).contiguous().view(-1,1)
                 present_scores=(local_best_scores).contiguous().view(-1,1)
@@ -358,20 +354,7 @@ class Decoder(nn.Module):
                 #selecting the top labels and scores
                 ys=torch.gather(ys,1,selecting_index)
                 score_1=torch.gather(score_1,1,selecting_index)
-                
-                #------------------------------------------
-                ##Lm_stff
-                if Is_RNNLM_used:
-                        ### Need to select the corresponding hidden states w.r.t. 'ys' messing it will keep you unhappy
-                        hin,cin = RNNLM_states
-                        hin_int=torch.repeat_interleave(hin,beam,1)
-                        cin_int=torch.repeat_interleave(cin,beam,1)       
-                        RNNLM_selecting_index=torch.cat([al2]*hin.size(2),dim=2)
-                        RNNLM_selecting_index=torch.cat([RNNLM_selecting_index]*hin.size(0),dim=0)
-                        hout=torch.gather(hin_int,1,RNNLM_selecting_index)
-                        cout=torch.gather(cin_int,1,RNNLM_selecting_index)
-                        RNNLM_states = hout, cout
-                #---------------------------------------------------------
+
                 ###making it ready for next iteration
                 ### converting the selected hypothesis per utterances to the seperate hypothesis to process the parallel
                 ys=ys.view(batch_size*hyps,-1)
@@ -384,7 +367,7 @@ class Decoder(nn.Module):
                      score_1[:,-1]=score_1[:,-1]*(~selected_EOS)
                      ys[:,-1][selected_EOS]=self.eos_id
                 #------------------------------
-            return ys, score_1, RNNLM_states
+            return ys,score_1
 # #=============================================================================================================
 ##======================================================================================================
 ##======================================================================================================
@@ -393,7 +376,6 @@ class Decoder(nn.Module):
         Args: encoder_outputs: T x H, 
         char_list: list of character, args: args.beam, 
         Returns: nbest_hyps: """
-       
         
         enc_out_len = encoder_outputs.size(1)       
         #----------------------------
@@ -408,65 +390,37 @@ class Decoder(nn.Module):
         ys = torch.ones(batch_size*hyps,1).fill_(self.sos_id).type_as(encoder_outputs).long()
         score_1=torch.zeros_like(ys).float()
         rep_encoder_outputs=torch.repeat_interleave(encoder_outputs,hyps,0)
-        #print(LM_model)
-        #===========================
-        ###LM Stuff
-        Is_RNNLM_used = 1 if 'RNNLM' in str(type(LM_model)) else 0
-        
-        if Is_RNNLM_used:
-            h0, c0 = LM_model.Initialize_hidden_states(ys.shape[0])
-            RNNLM_states = (h0,c0)
-        else:
-            RNNLM_states = None
-        #===========================
+
+
         store_ended_hyps = []
         store_ended_LLR = []
         #============================
         scores_list=[]
         start_collecting=False
         for i in range(maxlen):
-            
-       
+        
             #----------------------------------------------------  
             ## if loop to use or not an LM (or) skip the LM for the first step
             ## 
 
-            if Am_weight==1: 
+            if Am_weight==1 or (i<1): 
                 #print("not using a LM")
                 COMB_AM_MT_local_scores,scores_list,present_label,dec_output_Bneck=self.prediction_from_trained_model(ys,rep_encoder_outputs,scores_list)
             else:
                 AM_local_scores,scores_list,present_label,dec_output_Bneck=self.prediction_from_trained_model(ys,rep_encoder_outputs,scores_list)
-
-                #-----------------
-                if not Is_RNNLM_used:
-                        #Transformer language models
-                        LM_local_scores,scores_list,present_label,scores=LM_model.prediction_from_trained_model(ys,scores_list)
-
-
-
-                #####Using the Rnnlm language model
-                else:
-                        #"write stuff here"
-
-                        lm_input_labels = ys[:,-1].unsqueeze(1) if (ys.shape[1]>1) else ys
-                        h0, c0 = RNNLM_states
-
-                        RNNLM_outputs, RNNLM_states = LM_model.predict_rnnlm(lm_input_labels,h0,c0)
-                        RNNLM_outputs = RNNLM_outputs[-1,:,:]
-
-                        RNNLM_outputs = RNNLM_outputs.squeeze(0)
-                        LM_local_scores = nn.functional.log_softmax(RNNLM_outputs,dim=1)
-
-                        ##Done with rnnlm
+                LM_local_scores,scores_list,present_label,scores=LM_model.decoder.prediction_from_trained_model(ys,encoder_outputs,scores_list)
 
                 ####0.5 to 1.5 
                 COMB_AM_MT_local_scores = Am_weight * AM_local_scores + (1-Am_weight) * LM_local_scores
             #-------------------------------------------------------------------------------------------------------------------------
-            ys,score_1,RNNLM_states = self.prediction_from_trained_model_beam_Search(i,ys,score_1,COMB_AM_MT_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used,RNNLM_states)
+            
+            ys,score_1=self.prediction_from_trained_model_beam_Search(i,ys,score_1,COMB_AM_MT_local_scores,beam,hyps,gamma,batch_size)
             ##---------------------------------------------------
+
             score_1,store_ended_hyps,store_ended_LLR=self.get_multiple_hypothesis(store_ended_hyps,store_ended_LLR,ys,score_1,i,maxlen)
             #----------------------------------------------------
-            #### removing blank predictions :::::::> ####prdicting eos at the first token
+
+            #### removing blank predictions :::::::> ####  prdicting eos at the first token
             ##.pop(index) in python return a value   --->  careful
 
             remove_blank_predictions_index=[index for index,element in enumerate(store_ended_hyps) if (len(element)==2 and element[0]==self.sos_id and element[1]==self.eos_id)==True]

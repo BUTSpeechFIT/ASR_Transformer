@@ -8,6 +8,7 @@ parser.add_argument("--gpu",metavar='',type=int,default='0',help="use gpu flag 0
 #---------------------------
 
 ###model_parameter
+parser.add_argument("--conv_model",metavar='',type=str,default='Nothing',help="Conv_2D_4Layers|Nothing")
 parser.add_argument("--hidden_size",metavar='',type=int,default='320',help="Space token for the Char model")
 parser.add_argument("--input_size",metavar='',type=int,default='249',help="Space token for the Char model")
 parser.add_argument("--kernel_size",metavar='',type=int,default='3',help="kernel_size")
@@ -18,7 +19,11 @@ parser.add_argument("--conv_dropout",metavar='',type=float,default='0.1',help="c
 parser.add_argument("--isresidual",metavar='',type=int,default=0,help="isresidual --> 1|0 ")
 parser.add_argument("--enc_front_end",metavar='',type=str,default='Subsamp_lstm',help="Subsamp_lstm|conv2d|nothing")
 parser.add_argument("--Conv_Act",metavar='',type=str,default='relu',help="relu|tanh")
+parser.add_argument("--Conf_kernel_size",metavar='',type=int,default=31,help="5-31 based on length")
 
+
+
+parser.add_argument("--encoder",metavar='',type=str,default='Nothing',help="encoder|Nothing")
 parser.add_argument("--encoder_dropout",metavar='',type=float,default='0.3',help="encoder dropout ")
 parser.add_argument("--encoder_layers",metavar='',type=int,default='4',help="encoder dropout ")
 parser.add_argument("--encoder_dmodel",metavar='',type=int,default='256',help="encoder_dmodel")
@@ -27,6 +32,7 @@ parser.add_argument("--encoder_dinner",metavar='',type=int,default='1024',help="
 parser.add_argument("--encoder_ff_dropout",metavar='',type=float,default='0.3',help="encoder_ff_dropout ")
 parser.add_argument("--pe_max_len",metavar='',type=int,default='5000',help="pe_max_len")
 
+parser.add_argument("--decoder",metavar='',type=str,default='Nothing',help="decoder|Nothing")
 parser.add_argument("--dec_embd_vec_size",metavar='',type=int,default='256',help="dec_embd_vec_size")
 parser.add_argument("--decoder_dmodel",metavar='',type=int,default='256',help="decoder_dmodel")
 parser.add_argument("--decoder_heads",metavar='',type=int,default='4',help="decoder_heads")
@@ -36,12 +42,14 @@ parser.add_argument("--decoder_ff_dropout",metavar='',type=float,default='0.3',h
 parser.add_argument("--decoder_layers",metavar='',type=int,default='4',help="decoder_layers ")
 parser.add_argument("--tie_dec_emb_weights",metavar='',type=int,default=0,help="tie_dec_emb_weights")
 parser.add_argument("--warmup_steps",metavar='',type=int,default=25000,help="warmup_steps")
+parser.add_argument("--apply_cmvn",metavar='',type=int,default=1,help="warmup_steps")
 
 
 
-parser.add_argument("--nepochs",metavar='',type=int,default='100',help="No of epochs")
 
+parser.add_argument("--nepochs",metavar='',type=int,default='500',help="No of epochs")
 
+parser.add_argument("--step_num",metavar='',type=int,default=1,help="step_num")
 parser.add_argument("--learning_rate",metavar='',type=float,default='0.0003',help="Value of learning_rate ")
 parser.add_argument("--lr_scale",metavar='',type=float,default='1',help="Value of lr_scale ")
 
@@ -136,7 +144,10 @@ parser.add_argument("--MT_decoder_tokenizer",metavar='',type=str,default='/mnt/m
 
 
 ####decoding_parameters
-parser.add_argument("--RNNLM_model",metavar='',type=str,default='/mnt/matylda3/vydana/HOW2_EXP/Timit/models/TIMIT_fullnewsetup_2_4dr0.3_LAS_loc_arg_format_V2/model_architecture_',help="")
+parser.add_argument("--RNNLM_model",metavar='',type=str,default='0',help="")
+parser.add_argument("--TransLM_model",metavar='',type=str,default='0',help="")
+
+
 parser.add_argument("--LM_model",metavar='',type=str,default='None',help="LM_model")
 parser.add_argument("--Am_weight",metavar='',type=float,default=1,help="lm_weight a float calue between 0 to 1 --->(Am_weight* Am_pred + (1-Am_weight)*lm_pred)")
 parser.add_argument("--beam",metavar='',type=int,default=10,help="beam for decoding")

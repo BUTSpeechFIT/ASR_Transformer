@@ -15,7 +15,12 @@ import kaldi_io
 from CMVN import CMVN
 from utils__ import plotting
 from user_defined_losses import compute_cer
+
+from Load_sp_model import Load_sp_models
 #from Decoding_loop import get_cer_for_beam
+
+from Prune_the_sequences import prune_ngrams
+
 
 #=========================================================================================================================================
 def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args):
@@ -79,19 +84,51 @@ def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args
             
             #-----------------------------------
             #import pdb;pdb.set_trace()
-            #breakpoint()
+
+            
+            prune_output_sequences=1
+            if prune_output_sequences:
+                print("******pruning_ngarms*******")
+                if Text_seq_formatted:
+                    ngram_limit=4
+                    repetitions=2
+                    Text_seq_formatted_pruned = prune_ngrams(Text_seq_formatted,ngram_limit=ngram_limit,repetitions=repetitions)
+                    Text_seq_formatted = Text_seq_formatted_pruned
+            else:
+                Text_seq_formatted = " ".join(Text_seq_formatted)
+
             #-----------------------------------
+            #if True_label:
+            #        if Text_seq_formatted==[]:
+            #           Text_seq_formatted.append('<UNK>')
+            #
+            #        CER=compute_cer(" ".join(Text_seq_formatted)," ".join(True_label),'doesnot_matter')*100
+            #else:
+            #        CER=None
             if True_label:
                     if Text_seq_formatted==[]:
                        Text_seq_formatted.append('<UNK>')
+                    #======================================================================================
+                    ####Word_model to replace 
+                    if '__word.model' in args.Word_model_path:
+                        word_model_path = args.Word_model_path.replace('.model','.vocab')
+                        f=open(word_model_path,'r')
+                        F=f.readlines()
+                          
+                        vocab_dict = {word.strip().split('\t')[0].replace('▁',''):word.strip().split('\t')[0].replace('▁','') for word in F}
+                        True_label = [vocab_dict.get(word,'<UNK>') for word in True_label]
+                    #======================================================================================
 
-                    CER=compute_cer(" ".join(Text_seq_formatted)," ".join(True_label),'doesnot_matter')*100
+                    CER=compute_cer(Text_seq_formatted," ".join(True_label),'doesnot_matter')*100
             else:
                     CER=None
+            #---------------------------------------------
+
+
 
             #---------------------------------------------
             if ind==0:
-                    print("nbest_output",'=',key,'='," ".join(Text_seq_formatted),'='," ".join(True_label),'=',CER)
+                    print("nbest_output",'=',key,'=',Text_seq_formatted,'='," ".join(True_label),'=',CER)
 
             print("final_ouputs",'=',ind,'=',key,'=',Text_seq,'=',Yllr,'=',Ynorm_llr,'=',Yseq,'=',CER)
             #---------------------------------------------
@@ -163,6 +200,11 @@ def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,arg
                     CER=None
 
             #---------------------------------------------
+
+
+
+
+
             if ind==0:
                     print("nbest_output",'=',key,'='," ".join(Text_seq_formatted),'='," ".join(True_label),'=',CER)
 

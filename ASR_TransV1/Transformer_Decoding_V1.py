@@ -21,7 +21,7 @@ sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 from TRANSFORMER_ASR_V1 import Transformer
 from Initializing_Transformer_ASR import Initialize_Att_model
 from Stocasting_Weight_Addition import Stocasting_Weight_Addition
-from Load_RNNLM_Model import Load_RNNLM_model
+
 
 
 #-----------------------------------
@@ -48,16 +48,14 @@ if not isdir(args.model_dir):
 
 if args.Am_weight < 1:
     ##model class
-    #from RNNLM import RNNLM
-    
-    ##config file for RNLM
-    #import RNNLM_config
-    #from RNNLM_config import parser
+    from RNNLM import RNNLM
 
-    ####save architecture for decoding
-    #RNNLM_model_path_name=join(args.RNNLM_model,'model_architecture_')
-    
-    """    
+    ##config file for RNLM
+    import RNNLM_config
+    from RNNLM_config import parser
+
+    # ###save architecture for decoding
+    RNNLM_model_path_name=join(args.RNNLM_model,'model_architecture_')
     print("Using the language model in the path", RNNLM_model_path_name)
     with open(RNNLM_model_path_name, 'r') as f:
             RNNLM_TEMP_args = json.load(f)
@@ -65,9 +63,7 @@ if args.Am_weight < 1:
     #RNNLM=parser.parse_args(namespace=RNNLM_ns)
     ##==================================
     RNNLM_ns.gpu=0
-    """
-    LM_model,_=Load_RNNLM_model(args.RNNLM_model)
-    #LM_model=RNNLM(RNNLM_ns)
+    LM_model=RNNLM(RNNLM_ns)
     LM_model.eval()
     LM_model = LM_model.cuda() if args.gpu else LM_model
     args.LM_model = LM_model

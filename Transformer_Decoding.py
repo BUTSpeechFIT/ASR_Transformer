@@ -21,12 +21,12 @@ sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 from TRANSFORMER_ASR_V1 import Transformer
 from Initializing_Transformer_ASR import Initialize_Att_model
 from Stocasting_Weight_Addition import Stocasting_Weight_Addition
-from Load_RNNLM_Model import Load_RNNLM_model
 
+from Load_RNNLM_Model import Load_RNNLM_model
+from Load_Trained_model import Load_Transformer_LM_model
 
 #-----------------------------------
 import torch
-
 sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 import Transformer_arg
 from Transformer_arg import parser
@@ -42,35 +42,45 @@ with open(model_path_name, 'r') as f:
 ns = Namespace(**TEMP_args)
 args=parser.parse_args(namespace=ns)
 
+
 if not isdir(args.model_dir):
         os.makedirs(args.model_dir)
 
 
+
 if args.Am_weight < 1:
     ##model class
-    #from RNNLM import RNNLM
-    
-    ##config file for RNLM
-    #import RNNLM_config
-    #from RNNLM_config import parser
-
-    ####save architecture for decoding
-    #RNNLM_model_path_name=join(args.RNNLM_model,'model_architecture_')
-    
-    """    
-    print("Using the language model in the path", RNNLM_model_path_name)
-    with open(RNNLM_model_path_name, 'r') as f:
-            RNNLM_TEMP_args = json.load(f)
-    RNNLM_ns = Namespace(**RNNLM_TEMP_args)
-    #RNNLM=parser.parse_args(namespace=RNNLM_ns)
     ##==================================
-    RNNLM_ns.gpu=0
-    """
-    LM_model,_=Load_RNNLM_model(args.RNNLM_model)
-    #LM_model=RNNLM(RNNLM_ns)
-    LM_model.eval()
-    LM_model = LM_model.cuda() if args.gpu else LM_model
-    args.LM_model = LM_model
+    #args.TransLM_model="0"
+    if not ( args.RNNLM_model == '0' ) and  ( args.TransLM_model == '0' ):
+        ##AS does not need SWA so drectly give weight file 
+        LM_model,_ = Load_RNNLM_model(args.RNNLM_model) 
+        print("rnnlm_loop")
+
+
+    elif ( args.RNNLM_model == '0' ) and not ( args.TransLM_model == '0' ):
+        print("entering to wrong loop")
+        
+        #complex as it needs SWA for the weights
+        LM_model,_ = Load_Transformer_LM_model(args.TransLM_model,args.SWA_random_tag)
+        print("Transformer_Lm_loop")
+
+    else:
+        print("Some thing is wrong with language models")
+
+
+    if LM_model:
+        LM_model.eval()
+        LM_model = LM_model.cuda() if args.gpu else LM_model
+        args.LM_model = LM_model
+    else:
+        args.LM_model = None
+
+
+
+#print(args.LM_model) 
+#exit(0)
+
 ##==================================
 ##**********************************
 ##**********************************
@@ -79,22 +89,31 @@ def main():
         model,optimizer=Initialize_Att_model(args)
         model.eval()
         args.gpu=False
-
+        #breakpoint() 
         ###make SWA name 
         model_name = str(args.model_dir).split('/')[-1]
         ct=model_name+'_SWA_random_tag_'+str(args.SWA_random_tag)
-
         ##check the Weight averaged file and if the file does not exist then lcreate them
         ## if the file exists load them
         if not isfile(join(args.model_dir,ct)):
             model_names,checkpoint_ter = get_best_weights(args.weight_text_file,args.Res_text_file)
             model_names_checkpoints=model_names[:args.early_stopping_checkpoints]
+            swa_files=model_name+'_SWA_random_tag_weight_files_'+str(args.SWA_random_tag)
+            outfile=join(args.model_dir,swa_files)
+            #---------
+            with open(outfile,'a+') as outfile:
+                #outfile=join(str(args.model_dir),swa_files)
+                print(model_names_checkpoints,file=outfile)
+            #---------
             model = Stocasting_Weight_Addition(model,model_names_checkpoints)
             torch.save(model.state_dict(),join(args.model_dir,ct))
         else:
             print("taking the weights from",ct,join(args.model_dir,str(ct)))
+            #
+            ###load the required weights 
             args.pre_trained_weight = join(args.model_dir,str(ct))
             model,optimizer=Initialize_Att_model(args)
+
         #---------------------------------------------
         model.eval() 
         print("best_weight_file_after stocastic weight averaging")

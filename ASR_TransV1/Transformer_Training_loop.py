@@ -28,12 +28,12 @@ def train_val_model(**kwargs):
 
         #################finished expanding the keyword arguments#########
         ##===========================================
-        if args.spec_aug_flag and spec_aug_flag:
+        if trainflag and args.spec_aug_flag and spec_aug_flag:
                smp_feat_mask = Spec_Aug(smp_feat,args.min_F_bands,args.max_F_bands,args.time_drop_max,args.time_window_max)
                smp_feat = smp_feat * smp_feat_mask
 
         # #==========================================
-        if (args.weight_noise_flag) and weight_noise_flag:
+        if trainflag and (args.weight_noise_flag) and weight_noise_flag:
                  params = list(model.parameters()) 
                  param = [gaussian_noise(param, args.gpu) for param in params]
         #============================================
@@ -46,8 +46,23 @@ def train_val_model(**kwargs):
         Word_target=Word_target.cuda() if args.gpu else Word_target
 
         #--------------------------------
+        OOM=False
         if trainflag:
-                    Decoder_out_dict = model(input,Word_target)
+            try:
+                Decoder_out_dict = model(input,Word_target)                              
+                #break;
+            except Exception as e:
+                   if 'CUDA out of memory' in str(e):
+                      OOM=True
+                      torch.cuda.empty_cache()
+                      print("The model in OOM condition","smp_no",smp_no,"batch size for the batch is:",input.shape,target.shape)
+                      #break;
+            if OOM:
+                  batch_size=input.shape[0]
+                  input=input[:-batch_size]
+                  target=target[:-batch_size]
+                  print("The model running under OOM condition","smp_no",smp_no,"batch size for the batch is:",input.shape[0])
+                  Decoder_out_dict = model(input,Word_target)   
         else:
             with torch.no_grad():
                     Decoder_out_dict = model(input,Word_target)
@@ -56,10 +71,13 @@ def train_val_model(**kwargs):
 
         ###training with accumilating gradients
         if trainflag:
+                #Done always before .backword()
+                cost=cost/args.accm_grad
                 cost.backward()
                 if args.clip_grad_norm != 0:
                         torch.nn.utils.clip_grad_norm_(model.parameters(),args.clip_grad_norm)
-                cost=cost/args.accm_grad
+                #
+                
                 cost.detach()   
 
                 ###gradient accumilation
@@ -80,3 +98,7 @@ def train_val_model(**kwargs):
                             'Word_cer':Decoder_out_dict.get('Word_cer')}
         return Output_trainval_dict
 #=========================================================
+
+
+
+

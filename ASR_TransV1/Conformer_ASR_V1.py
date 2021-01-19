@@ -18,9 +18,14 @@ import numpy as np
 from keras.preprocessing.sequence import pad_sequences
 #from Trans_utilities import get_attn_key_pad_mask, get_subsequent_mask, get_attn_pad_mask_encoder, get_attn_pad_mask,get_encoder_non_pad_mask, get_decoder_non_pad_mask,pad_list
 
-#from Trans_Decoder import Decoder
-#from Trans_Encoder import Encoder
-#from Trans_conv_layers import Conv_2D_Layers
+from Trans_Decoder import Decoder
+from Trans_Encoder import Encoder
+
+
+
+
+
+from Trans_conv_layers import Conv_2D_Layers
 
 import sys
 import kaldi_io
@@ -35,37 +40,17 @@ class Transformer(nn.Module):
     def __init__(self,args):
         super(Transformer, self).__init__()   
         self.label_smoothing = args.label_smoothing
-
-        if args.conv_model=='Conv_2D_4Layers':
-            print("using conv layers",)
-            from Trans_conv_layers import Conv_2D_4Layers as Conv_2D_Layers
-        else:
-            from Trans_conv_layers import Conv_2D_Layers
-        #print("using conv layers",Conv_2D_Layers)
-        
-        if args.encoder=='conformer':
-           from Conf_Encoder import Encoder 
-        else:
-            from Trans_Encoder import Encoder
-
-        #----------------------------------
-        if args.decoder=='decoder':
-            print("Nothing special")
-        else:
-            from Trans_Decoder import Decoder
-        #----------------------------------
-
         self.conv_layers = Conv_2D_Layers(args=args)
         self.encoder = Encoder(args=args,MT_flag=False)
         self.decoder = Decoder(args=args)
-    #----------------------------------
+        #----------------------------------
     def forward(self, padded_input,padded_target):
         ###conv layers
+
         conv_padded_input=self.conv_layers(padded_input)
-        
         #General Transformer ASR model
+        
         encoder_padded_outputs, *_ = self.encoder(conv_padded_input)
-        #
         output_dict = self.decoder(padded_target, encoder_padded_outputs)
         return output_dict
     #=============================================================================================================
@@ -114,14 +99,14 @@ class Transformer(nn.Module):
 class TransformerOptimizer(object):
     """A simple wrapper class for learning rate scheduling"""
 
-    def __init__(self, optimizer, k, d_model, step_num, warmup_steps=4000):
+    def __init__(self, optimizer, k, d_model, warmup_steps=4000):
         self.optimizer = optimizer
         self.k = k
         
         #present_lr=[param_group['lr'] for param_group in self.optimizer.param_groups]
         self.init_lr = d_model ** (-0.5)
         self.warmup_steps = warmup_steps
-        self.step_num = step_num
+        self.step_num = 0
         self.reduction_factor=1
     def zero_grad(self):
         self.optimizer.zero_grad()
@@ -159,7 +144,6 @@ class TransformerOptimizer(object):
     def print_lr(self):
         present_lr=[param_group['lr'] for param_group in self.optimizer.param_groups]
         return present_lr[0]
-
 
 #==============================================================================================================
 #---------------------------------------------------------------------------------------------------------------

@@ -48,38 +48,30 @@ def Spec_Aug(inp,min_F_bands,max_F_bands,time_drop_max,time_window_max):
 
 #----------------------------------------------------------------
 def Spec_Aug_freqCont(inp,min_F_bands,max_F_bands,time_drop_max,time_window_max):
-        """both time and frequency drops are continous"""
+        """both time and frequency drops are continous,features are mean variance normalized"""
         
-        #--------------------        
-        #time_drop_percentage = int(np.random.randint(low=0,high=int(time_drop_max),size=1))
-        #time_drop_window = int(np.random.randint(low=0,high=int(time_window_max),size=1))
-        time_drop_percentage = time_drop_max
-        time_drop_window = time_window_max
-        #--------------------
-        time_drop_window = int(time_drop_window)
+        F = int(max_F_bands)
+        T = int(time_window_max)     
+        time_drop_percentage = time_drop_max        
+        
         feat = np.ones_like(inp, dtype=np.float32)
         time = feat.shape[1]
-        #--------------------------------------------
-        #--------------------------------------------
 
-        #no_of_freq_masks=int(np.random.randint(low=min_F_bands, high=max_F_bands, size=1))
-
-        no_of_freq_masks = max_F_bands
-        freq_mask = int(np.random.randint(inp.shape[2]-no_of_freq_masks-1, size=1))
         
-        #print(freq_mask,freq_mask+no_of_freq_masks)
-        feat[:, :, freq_mask:freq_mask+no_of_freq_masks] = 0
-        #------------------------------------------------
-        #------------------------------------------------
+        ###sample freq masks from uniform distribution 
+        f  = int(np.random.randint(low=1, high=F, size=1))
+        f0 = int(np.random.randint(inp.shape[2]-(f-1), size=1))
+        feat[:, :, f0:f0+f] = 0
+ 
         
+        ##get number of time masks        
         time_drop_masks = int( time*time_drop_percentage/100 )
-        #-----------------------------------------------
+        
         for _ in range(time_drop_masks):
-            time_mask=int(np.random.randint(time-5-time_drop_window, size=1))
-            #print(time_mask)
-            feat[:, time_mask:time_mask+time_drop_window, :]=0
-
-        #----------------------------------------------
+            t = int(np.random.randint(low=1, high=T, size=1))
+            t0 = int(np.random.randint((time-5)-t, size=1))
+            feat[:, t0:t0+t, :]=0
+        
         return feat
 #-------------------------------------------------------------------
 

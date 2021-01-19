@@ -41,7 +41,8 @@ class Conv_2D_Layers(nn.Module):
                 conv_output=CV2
                 b, c, t, f = conv_output.size()
                 conv_output=conv_output.transpose(1,2).contiguous().view(b,t,c*f)
-                lin_conv_output=self.linear_out(conv_output)    
+                
+                lin_conv_output=self.linear_out(conv_output)
                 return lin_conv_output
 
 #---------------------------------------------------------------------------------------------------------------
