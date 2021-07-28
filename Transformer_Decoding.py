@@ -60,7 +60,6 @@ if args.Am_weight < 1:
 
     elif ( args.RNNLM_model == '0' ) and not ( args.TransLM_model == '0' ):
         print("entering to wrong loop")
-        
         #complex as it needs SWA for the weights
         LM_model,_ = Load_Transformer_LM_model(args.TransLM_model,args.SWA_random_tag)
         print("Transformer_Lm_loop")
@@ -95,28 +94,30 @@ def main():
         ct=model_name+'_SWA_random_tag_'+str(args.SWA_random_tag)
         ##check the Weight averaged file and if the file does not exist then lcreate them
         ## if the file exists load them
-        if not isfile(join(args.model_dir,ct)):
-            model_names,checkpoint_ter = get_best_weights(args.weight_text_file,args.Res_text_file)
-            model_names_checkpoints=model_names[:args.early_stopping_checkpoints]
-            swa_files=model_name+'_SWA_random_tag_weight_files_'+str(args.SWA_random_tag)
-            outfile=join(args.model_dir,swa_files)
-            #---------
-            with open(outfile,'a+') as outfile:
-                #outfile=join(str(args.model_dir),swa_files)
-                print(model_names_checkpoints,file=outfile)
-            #---------
-            model = Stocasting_Weight_Addition(model,model_names_checkpoints)
-            torch.save(model.state_dict(),join(args.model_dir,ct))
-        else:
-            print("taking the weights from",ct,join(args.model_dir,str(ct)))
-            #
-            ###load the required weights 
-            args.pre_trained_weight = join(args.model_dir,str(ct))
-            model,optimizer=Initialize_Att_model(args)
 
+        if not isfile(args.pre_trained_weight):
+
+
+                if not isfile(join(args.model_dir,ct)):
+                    print("stocastic weight averaging-------------")
+                    model_names,checkpoint_ter = get_best_weights(args.weight_text_file,args.Res_text_file)
+                    model_names_checkpoints=model_names[:args.early_stopping_checkpoints]
+                    swa_files=model_name+'_SWA_random_tag_weight_files_'+str(args.SWA_random_tag)
+                    outfile=join(args.model_dir,swa_files)
+                    #---------
+                    with open(outfile,'a+') as outfile:
+                        #outfile=join(str(args.model_dir),swa_files)
+                        print(model_names_checkpoints,file=outfile)
+                    #---------
+                    model = Stocasting_Weight_Addition(model,model_names_checkpoints)
+                    torch.save(model.state_dict(),join(args.model_dir,ct))
+                else:
+                    print("taking the weights from",ct,join(args.model_dir,str(ct))) 
+                    ###load the required weights 
+                    args.pre_trained_weight = join(args.model_dir,str(ct))
+                    model,optimizer=Initialize_Att_model(args)
         #---------------------------------------------
         model.eval() 
-        print("best_weight_file_after stocastic weight averaging")
         #=================================================
         model = model.cuda() if args.gpu else model
         plot_path=join(args.model_dir,'decoding_files','plots')

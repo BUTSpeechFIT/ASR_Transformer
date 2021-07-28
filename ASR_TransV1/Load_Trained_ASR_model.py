@@ -71,6 +71,7 @@ def Load_Transformer_ASR_model(model_dir, SWA_random_tag, est_cpts=None):
                 args.early_stopping_checkpoints=est_cpts
 
         #args=parser.parse_args(namespace=ns)
+        args.SWA_random_tag = SWA_random_tag
         ###make SWA name 
         model_name = str(args.model_dir).split('/')[-1]
         ct=model_name+'_SWA_random_tag_'+str(args.SWA_random_tag) + '_args_ealystpping_checkpoints_'+str(args.early_stopping_checkpoints)

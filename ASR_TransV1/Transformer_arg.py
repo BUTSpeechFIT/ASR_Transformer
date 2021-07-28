@@ -152,6 +152,9 @@ parser.add_argument("--LM_model",metavar='',type=str,default='None',help="LM_mod
 parser.add_argument("--Am_weight",metavar='',type=float,default=1,help="lm_weight a float calue between 0 to 1 --->(Am_weight* Am_pred + (1-Am_weight)*lm_pred)")
 parser.add_argument("--beam",metavar='',type=int,default=10,help="beam for decoding")
 parser.add_argument("--gamma",metavar='',type=float,default=1,help="gamma (0-2), noisy eos rejection scaling factor while decoding")
+parser.add_argument("--len_bonus",metavar='',type=float,default=0.3,help="len_bonus default 1 (0-0.8), to prefer long hyps")
+
+
 parser.add_argument("--len_pen",metavar='',type=float,default=1,help="len_pen(0.5-2), len_pen maximum number of decoding steps")
 parser.add_argument("--Decoding_job_no",metavar='',type=int,default=0,help="Res_file")
 parser.add_argument("--scp_for_decoding",metavar='',type=int,default=0,help="scp file for decoding")

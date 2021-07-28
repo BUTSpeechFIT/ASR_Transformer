@@ -128,7 +128,10 @@ def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args
 
             #---------------------------------------------
             if ind==0:
-                    print("nbest_output",'=',key,'=',Text_seq_formatted,'='," ".join(True_label),'=',CER)
+                    if True_label:
+                        True_label=" ".join(True_label)
+
+                    print("nbest_output",'=',key,'=',Text_seq_formatted,'=',True_label,'=',CER)
 
             print("final_ouputs",'=',ind,'=',key,'=',Text_seq,'=',Yllr,'=',Ynorm_llr,'=',Yseq,'=',CER)
             #---------------------------------------------
@@ -206,7 +209,9 @@ def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,arg
 
 
             if ind==0:
-                    print("nbest_output",'=',key,'='," ".join(Text_seq_formatted),'='," ".join(True_label),'=',CER)
+                    if True_label:
+                        True_label=" ".join(True_label)
+                    print("nbest_output",'=',key,'='," ".join(Text_seq_formatted),'=',True_label,'=',CER)
 
             print("final_ouputs",'=',ind,'=',key,'=',Text_seq,'=',Yllr,'=',Ynorm_llr,'=',Yseq,'=',CER)
             #---------------------------------------------

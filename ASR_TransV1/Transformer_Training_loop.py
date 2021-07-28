@@ -9,6 +9,31 @@ sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 from Spec_Augument import Spec_Aug_freqCont as Spec_Aug
 from utils__ import weights_init,gaussian_noise
 
+
+
+#=========================================================
+def forword_and_update(trainflag, smp_no, model, optimizer, input, Word_target, accm_grad, clip_grad_norm):
+        Decoder_out_dict = model(input,Word_target) 
+        cost=Decoder_out_dict.get('cost')
+
+        if trainflag:
+                cost=cost/accm_grad
+                cost.backward()
+
+                if clip_grad_norm != 0:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),clip_grad_norm)
+                cost.detach()   
+
+                ###gradient accumilation
+                if(smp_no%accm_grad)==0:
+                        optimizer.step()
+                        optimizer.zero_grad()
+
+        cost_cpu = cost.item()
+        return Decoder_out_dict,cost_cpu
+#=========================================================
+
+
 #---------------------------------------
 def train_val_model(**kwargs):
         smp_no=kwargs.get('smp_no')
@@ -47,47 +72,30 @@ def train_val_model(**kwargs):
 
         #--------------------------------
         OOM=False
+
         if trainflag:
-            try:
-                Decoder_out_dict = model(input,Word_target)                              
-                #break;
-            except Exception as e:
-                   if 'CUDA out of memory' in str(e):
-                      OOM=True
-                      torch.cuda.empty_cache()
-                      print("The model in OOM condition","smp_no",smp_no,"batch size for the batch is:",input.shape,target.shape)
-                      #break;
-            if OOM:
-                  batch_size=input.shape[0]
-                  input=input[:-batch_size]
-                  target=target[:-batch_size]
-                  print("The model running under OOM condition","smp_no",smp_no,"batch size for the batch is:",input.shape[0])
-                  Decoder_out_dict = model(input,Word_target)   
+                try:
+                        Decoder_out_dict, cost_cpu = forword_and_update(trainflag, smp_no, model, optimizer, input, Word_target, args.accm_grad, args.clip_grad_norm)
+
+                except Exception as e:
+                           if 'CUDA out of memory' in str(e):
+                                OOM=True
+                                torch.cuda.empty_cache()
+                                print("The model in OOM condition","smp_no",smp_no,"batch size for the batch is:",input.shape)
+                
+                if OOM:
+                        batch_size=input.shape[0]
+                        input=input[:2]
+                        Word_target=Word_target[:2]
+                        print("The model running under OOM condition","smp_no",smp_no,"batch size for the batch is:",2)
+                        Decoder_out_dict, cost_cpu = forword_and_update(trainflag, smp_no, model, optimizer, input, Word_target, args.accm_grad, args.clip_grad_norm)
         else:
             with torch.no_grad():
-                    Decoder_out_dict = model(input,Word_target)
+                    Decoder_out_dict, cost_cpu = forword_and_update(trainflag, smp_no,model, optimizer, input, Word_target, args.accm_grad, args.clip_grad_norm)
+
+
         #--------------------------------
-        cost=Decoder_out_dict.get('cost')
-
-        ###training with accumilating gradients
-        if trainflag:
-                #Done always before .backword()
-                cost=cost/args.accm_grad
-                cost.backward()
-                if args.clip_grad_norm != 0:
-                        torch.nn.utils.clip_grad_norm_(model.parameters(),args.clip_grad_norm)
-                #
-                
-                cost.detach()   
-
-                ###gradient accumilation
-                if(smp_no%args.accm_grad)==0:
-                    optimizer.step()
-                    optimizer.zero_grad()
-                cost_cpu=cost.item()
         #--------------------------------------
-        cost_cpu = cost.item() 
-
         ###output a dict
         #==================================================    
         Output_trainval_dict={
@@ -97,8 +105,5 @@ def train_val_model(**kwargs):
                             'Char_cer':Decoder_out_dict.get('Char_cer'),
                             'Word_cer':Decoder_out_dict.get('Word_cer')}
         return Output_trainval_dict
-#=========================================================
-
-
-
+#===============================================================
 

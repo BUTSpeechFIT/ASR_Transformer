@@ -102,9 +102,10 @@ class DataLoader(object):
             max_batch_label_len = self.max_batch_label_len
             random.shuffle(self.files)
             for inp_file in self.files:
-                #print(self.files)
+                #print(inp_file)
                 with open(inp_file) as f:
                     for line in f:
+                        #print('---->',line)
                         #============================
                         split_lines=line.split(' @@@@ ')
                         #============================
@@ -116,13 +117,23 @@ class DataLoader(object):
                         #============================
                         src_text = split_lines[3] 
                         src_tok = split_lines[4] 
-                        src_tok = [int(i) for i in src_tok.split(' ')]  
+
+                        #=============================
+                        if len(src_tok)>0:
+                                src_tok = [int(i) for i in src_tok.split(' ')]  
+                        else:
+                                continue;
                         #============================
                         ##Word models
                         #============================
                         tgt_text = split_lines[5]
                         tgt_tok = split_lines[6]
-                        tgt_tok = [int(i) for i in tgt_tok.split(' ')]  
+                        
+                        #=============================
+                        if len(tgt_tok)>0:
+                                tgt_tok = [int(i) for i in tgt_tok.split(' ')]  
+                        else:
+                                continue;
                         #============================
                         ### text 
                         #============================
@@ -142,7 +153,7 @@ class DataLoader(object):
 
 
                         if (mat.shape[0]>self.max_feat_len) or (mat.shape[0]<len(char_labels)) or (len(char_tokens) > self.max_label_len):
-                                print("key,mat.shape,char_labels,char_tokens,self.max_label_len",key,mat.shape,len(char_labels),len(char_tokens),self.max_label_len)
+                                #print("key,mat.shape,char_labels,char_tokens,self.max_label_len",key,mat.shape,len(char_labels),len(char_tokens),self.max_label_len)
                                 continue;
 
                         #==============================================================
@@ -195,7 +206,7 @@ class DataLoader(object):
                 batch_data_dict = self.make_batching_dict()
                 self.queue.put(batch_data_dict)
 
-    def next(self, timeout=30000):
+    def next(self, timeout=30):
         return self.queue.get(block=True, timeout=timeout)
 #===================================================================
 

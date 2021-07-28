@@ -3,8 +3,41 @@
 
 
 
-model_dir="/mnt/matylda3/vydana/HOW2_EXP/Librispeech_V2/models/LIB_Trans_100M_12_6_512_8_2048_dr0.1_noclipgrad_accmgrad4"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/Librispeech_V2/models/LIB_Trans_100M_12_6_512_8_2048_dr0.1_noclipgrad_accmgrad4"
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/Librispeech_V2/models/LIB_Trans_100M_12_6_512_8_2048_dr0.1_noclipgrad_IWSLT_finetune_batchlen4K_accmgrad8_IWSLT_ASR2021_8G"
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm"
+
+
+
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_finetune_mustc"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_finetune_mustc_ted_IWSLT"
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_finetune_mustc_ted_IWSLT_cleaned"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_finetune_mustc_ted_IWSLT_cleaned_tc"
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H"
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech10WER_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_finetune_mustc_ted_IWSLT_cleaned_tc"
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_SSfinetuning_ASR_MT_0.5"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/HOW2_IWSLT2021/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data"
+
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/HOW2_IWSLT2021/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data8K"
+
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data3K"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data5k"
+
+model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc18_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_CTC"
 SWA_random_tag="$RANDOM"
-est_cpts=4
+est_cpts=8
 
 python /mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1/Get_SWA_weights.py $model_dir $SWA_random_tag $est_cpts

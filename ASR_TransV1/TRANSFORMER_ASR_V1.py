@@ -43,11 +43,16 @@ class Transformer(nn.Module):
             from Trans_conv_layers import Conv_2D_Layers
         #print("using conv layers",Conv_2D_Layers)
         
+        #----------------------------------
+        #----------------------------------
         if args.encoder=='conformer':
            from Conf_Encoder import Encoder 
+        elif args.encoder=='Fnet':
+            from Trans_Fnet_encoder import Encoder
         else:
             from Trans_Encoder import Encoder
 
+        #----------------------------------
         #----------------------------------
         if args.decoder=='decoder':
             print("Nothing special")

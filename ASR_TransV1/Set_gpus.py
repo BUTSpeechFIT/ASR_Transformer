@@ -12,7 +12,6 @@ def Set_gpu():
         #os.environ["CUDA_VISIBLE_DEVICES"] = str(subprocess.check_output(cuda_command, shell=True)).rsplit('\n')[0]
         oooo=subprocess.check_output(cuda_command, shell=True)
         print(oooo)
-
         dev_id=str(oooo).lstrip('b').strip("'").split('\\n')[0]
         os.environ["CUDA_VISIBLE_DEVICES"]=dev_id
 
@@ -21,4 +20,6 @@ def Set_gpu():
         zzz=torch.zeros(10,10)
         zzz=zzz.cuda()
 
+#from safe_gpu import safe_gpu
+#gpu_owner = safe_gpu.GPUOwner()
 

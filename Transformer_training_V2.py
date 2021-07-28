@@ -21,6 +21,10 @@ import Set_gpus
 from Set_gpus import Set_gpu
 if args.gpu:
     Set_gpu()
+
+#import safe_gpu
+#from safe_gpu import safe_gpu
+#gpu_owner = safe_gpu.GPUOwner()
 #***********************
 
 import numpy as np
@@ -89,9 +93,7 @@ def main():
         #============================================================
         #------------------------------------------------------------  
         #
-        train_gen = DataLoader(files=glob.glob(args.data_dir + "train_scp_splits/aa_*") 
-                                + glob.glob(args.data_dir + "train_scp_splits_temp1/bb_*")
-                                + glob.glob(args.data_dir + "train_scp_splits_temp2/cc_*"),
+        train_gen = DataLoader(files=glob.glob(args.data_dir + "train_splits/*"),
                                 max_batch_label_len=args.max_batch_label_len,
                                 max_batch_len=args.max_batch_len,
                                 max_feat_len=args.max_feat_len,
@@ -100,9 +102,8 @@ def main():
                                 Char_model=Char_model,
                                 apply_cmvn=int(args.apply_cmvn))
 
-
-        dev_gen = DataLoader(files=glob.glob(args.data_dir + "dev_scp"),
-                                max_batch_label_len=args.max_batch_label_len,
+        dev_gen = DataLoader(files=glob.glob(args.data_dir + "dev_splits/*"),
+                                max_batch_label_len=2000,
                                 max_batch_len=args.max_batch_len,
                                 max_feat_len=5000,
                                 max_label_len=1000,
@@ -115,13 +116,17 @@ def main():
         if args.spec_aug_flag==2:
                 weight_noise_flag=False
                 spec_aug_flag=True
+        else:
+              weight_noise_flag=False
+              spec_aug_flag=False
         val_history=np.zeros(args.nepochs)
         #======================================
         for epoch in range(args.nepochs):
             ##start of the epoch
             tr_CER=[]; tr_BPE_CER=[]; L_train_cost=[]
             model.train();
-            for trs_no in range(args.validate_interval):
+            validate_interval = int(args.validate_interval * args.accm_grad) if args.accm_grad>0 else args.validate_interval
+            for trs_no in range(validate_interval):
                 B1 = train_gen.next()
                 assert B1 is not None, "None should never come out of the DataLoader"
 

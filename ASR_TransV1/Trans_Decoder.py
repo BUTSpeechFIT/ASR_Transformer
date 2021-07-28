@@ -401,6 +401,8 @@ class Decoder(nn.Module):
 
         ### This works but can be increased but it takes memory, can be increased Works ---Memory?
         hyps=beam
+        len_bonus = float(args.len_bonus)
+        #breakpoint()
         #----------------------------
         print("beam,hyps,len_pen,maxlen,enc_out_len,Am_weight",beam,hyps,len_pen,maxlen,enc_out_len,Am_weight)
         
@@ -463,6 +465,10 @@ class Decoder(nn.Module):
                 COMB_AM_MT_local_scores = Am_weight * AM_local_scores + (1-Am_weight) * LM_local_scores
             #-------------------------------------------------------------------------------------------------------------------------
             ys,score_1,RNNLM_states = self.prediction_from_trained_model_beam_Search(i,ys,score_1,COMB_AM_MT_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used,RNNLM_states)
+
+
+
+            #print(ys,score_1)
             ##---------------------------------------------------
             score_1,store_ended_hyps,store_ended_LLR=self.get_multiple_hypothesis(store_ended_hyps,store_ended_LLR,ys,score_1,i,maxlen)
             #----------------------------------------------------
@@ -478,14 +484,19 @@ class Decoder(nn.Module):
                 break;
         #----------------------------------------------------
         ys=nn.utils.rnn.pad_sequence(store_ended_hyps,batch_first=True,padding_value=self.eos_id)
-        score_1=nn.utils.rnn.pad_sequence(store_ended_LLR,batch_first=True,padding_value=0)
+        score_1=nn.utils.rnn.pad_sequence(store_ended_LLR,batch_first=True,padding_value=np.log(len_bonus))
         
         #producing the correct_order
         #----------------------------------------------------
-        XS=[torch.sum(i) for i in store_ended_LLR]
-        XS1=sorted(((e,i) for i,e in enumerate(XS)),reverse=True)
-        correct_sorted_order=[i[1] for i in XS1]
+        # XS=[torch.sum(i) for i in store_ended_LLR]
+        # XS1=sorted(((e,i) for i,e in enumerate(XS)),reverse=True)
+        # correct_sorted_order=[i[1] for i in XS1]
+
+
+
+        _,correct_sorted_order = torch.sort(torch.sum(score_1,dim=1),descending=True)
         #----------------------------------------------------
+       
         ys=ys[correct_sorted_order]
         score_1=score_1[correct_sorted_order]
         ##------------------------------
