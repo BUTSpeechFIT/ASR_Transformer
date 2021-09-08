@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import pdb 
+import pdb
 from torch.autograd import Variable
 
 
@@ -12,7 +12,7 @@ from Trans_MHA import MultiHeadAttention, PositionwiseFeedForward, PositionalEnc
 
 
 import sys
-sys.path.insert(0, '/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
+# sys.path.insert(0, '/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 from Load_sp_model import Load_sp_models
 
 #============================================================================================================================
@@ -22,7 +22,7 @@ class DecoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,ff_dropout=0.1):
         super(DecoderLayer, self).__init__()
-        
+
         self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=ff_dropout)
@@ -60,7 +60,7 @@ class Decoder(nn.Module):
         self.Word_model = Load_sp_models(args.Word_model_path)
 
         self.targets_no = int(self.Word_model.__len__())
-        self.pad_index  = self.targets_no       
+        self.pad_index  = self.targets_no
         self.sos_id     = self.targets_no + 1 # Start of Sentence
         self.eos_id     = self.targets_no + 2 # End of Sentence
         self.mask_id    = self.targets_no + 3
@@ -69,7 +69,7 @@ class Decoder(nn.Module):
         self.Word_SIL_tok   = self.Word_model.EncodeAsIds('_____')[0]
         self.IGNORE_ID = self.pad_index
         #---------------------------------------------------------------
-        
+
 
         # parameters
         self.n_tgt_vocab = self.Wout_size
@@ -87,7 +87,7 @@ class Decoder(nn.Module):
         self.pe_maxlen = args.pe_max_len
 
         self.tgt_word_emb = nn.Embedding(self.n_tgt_vocab, self.d_word_vec)
-        self.x_scale = math.sqrt(self.d_model)       
+        self.x_scale = math.sqrt(self.d_model)
 
         self.positional_encoding = PositionalEncoding(self.d_model, max_len=self.pe_maxlen, dropout=self.dropout)
         self.output_norm=nn.LayerNorm(self.d_model)
@@ -98,15 +98,15 @@ class Decoder(nn.Module):
                                                        ff_dropout=self.ff_dropout) for _ in range(self.n_layers)])
         self.tgt_word_prj = nn.Linear(self.d_model, self.n_tgt_vocab)
 
-        ###weight tie-ing 
-        ##for the tieing to be possible weights of self.tgt_word_emb, self.tgt_word_prj should be equal 
+        ###weight tie-ing
+        ##for the tieing to be possible weights of self.tgt_word_emb, self.tgt_word_prj should be equal
         ### self.d_word_vec should be equal to self.d_model or a linear layer should be used
         if self.tie_dec_emb_weights:
                 self.tgt_word_emb.weight=self.tgt_word_prj.weight
 
         ###label_smoothed_cross_entropy
         self.label_smoothing=args.label_smoothing
-     
+
 
     def preprocess(self, padded_input):
         """Generate decoder input and output label from padded_input
@@ -117,27 +117,27 @@ class Decoder(nn.Module):
         eos = ys[0].new([self.eos_id])
         sos = ys[0].new([self.sos_id])
         ys_in = [torch.cat([sos, y], dim=0) for y in ys ]
-       
+
 
         ys_out = [torch.cat([y, eos], dim=0) for y in ys]
         # padding for ys with -1
         # pys: utt x olen
         ys_in_pad = pad_list(ys_in, self.eos_id)
         ys_out_pad = pad_list(ys_out, self.IGNORE_ID) ####original
-        
+
         assert ys_in_pad.size() == ys_out_pad.size()
         return ys_in_pad, ys_out_pad
 
     def forward(self, padded_input, encoder_padded_outputs,return_attns=True):
         """ Args: padded_input: N x To encoder_padded_outputs: N x Ti x H   Returns:"""
-        #####################################################################     
+        #####################################################################
         cuda_flag = encoder_padded_outputs.is_cuda
         device_flag = torch.device("cuda") if cuda_flag else torch.device("cpu")
-        #===================================================================   
+        #===================================================================
         dec_slf_attn_list, dec_enc_attn_list = [], []
         #Get Deocder Input and Output
         ys_in_pad, ys_out_pad = self.preprocess(padded_input)
-        
+
         #Prepare masks
         slf_attn_mask_subseq = get_subsequent_mask(ys_in_pad)
         output_length = ys_in_pad.size(1)
@@ -170,7 +170,7 @@ class Decoder(nn.Module):
         cost, CER = cal_performance(pred, gold,self.IGNORE_ID,normalize_length=False,smoothing=self.label_smoothing)
         #breakpoint()
 
-        # output_dict={'cost':cost, 'CER':CER, 'smp_pred':pred,'smp_gold':gold}       
+        # output_dict={'cost':cost, 'CER':CER, 'smp_pred':pred,'smp_gold':gold}
         output_dict = {'cost':cost, 'dec_slf_attn_list':dec_slf_attn_list, 'dec_enc_attn_list':dec_enc_attn_list, 'Char_cer':CER, 'Word_cer':CER}
         return output_dict
 
@@ -224,8 +224,8 @@ class Decoder(nn.Module):
         #the first token should not be EOS
         mov_id=ys[:,-1]==self.eos_id
         #-------------------------
-        if (i==maxlen-1): 
-            collecting_ys=ys    
+        if (i==maxlen-1):
+            collecting_ys=ys
             collecting_score=score_1
             start_collecting=True
 
@@ -234,7 +234,7 @@ class Decoder(nn.Module):
             collecting_ys=ys[mov_id]
             collecting_score=score_1[mov_id]
             start_collecting=True
-            
+
             ###for pruning out theprefixes which will go to list
             score_1[mov_id]=score_1[mov_id]-1000
         else:
@@ -253,7 +253,7 @@ class Decoder(nn.Module):
 #=============================================================================================================
 ##############################################################################################################
     def Regrouping_bottleneck_features(self,dec_output_Bneck_org,beam,Selc_Index,batch_size,hyps):
-                """ For the Joint model training the bottle-necks from the model are to be collected for every prefix 
+                """ For the Joint model training the bottle-necks from the model are to be collected for every prefix
                     as the prefixes get pruned out in beam search the associated bottlencks need to be pruned out and,
                     the ones that finally stand-out in the beam search has the corresponding bottlenecks in this outpout
                 """
@@ -270,7 +270,7 @@ class Decoder(nn.Module):
 ################################################################################################################
     def prediction_from_trained_model_beam_Search(self,i,ys,score_1,AM_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used=0,RNNLM_states=None):
             """
-            ####vecotorized beam-search ===>beam search that happens parllelly i.e., 
+            ####vecotorized beam-search ===>beam search that happens parllelly i.e.,
             1.Each prefix is treated as a invidual sequence when given to the model and the predictions for each prefixes are obtained;
             2.Each prefix has a beam of new possible labels, so each prefix is repeated beam number of times and the new label is concatented so does the likeli-hood score;
             3.the new prefixes are hyps_no*beam are pruned to settle with hyps_no prefixes
@@ -279,37 +279,41 @@ class Decoder(nn.Module):
 
             #folded accordingly and the beam of new
             """
+
+            # import pdb
+            # pdb.set_trace()
+
             if i==0:
-                
-                ###for the first time just repeat the hyps and add the beam to the hyposhesis 
+
+                ###for the first time just repeat the hyps and add the beam to the hyposhesis
                 local_best_scores, local_best_ids = torch.topk(AM_local_scores, hyps, dim=1,largest=True,sorted=True)
                 #---------------------
                 present_ids=(local_best_ids[::hyps]).contiguous().view(-1,1)
                 present_scores=(local_best_scores[::hyps]).contiguous().view(-1,1)
-            
-                ##for not allow ing eos as first token 
+
+                ##for not allow ing eos as first token
                 ##first lable cannot be eos
                 #-----------------------------------------------------------------------
                 mask=torch.eq(present_ids,self.eos_id)
 
                 ys=torch.cat((ys,present_ids),dim=1)
                 score_1=torch.cat((score_1,present_scores),dim=1)
-                #-----------------------------------------------------------------------                            
+                #-----------------------------------------------------------------------
                 mask=torch.eq(present_ids,self.eos_id)
                 score_1=score_1-mask*1000
 
 
                 ###Not corrected ------>should be expanded and selected with selection index,,,,, but model regenerates them with labels in i=>1
-            #----------------------------------------------------------------------------    
+            #----------------------------------------------------------------------------
             else:
 
                 #---------------------
                 local_best_scores, local_best_ids = torch.topk(AM_local_scores, beam, dim=1,largest=True,sorted=True)
-                #---------------------               
+                #---------------------
                 ###################################################
-                
 
-                ####filtering EOS if EOS has occured with the value leess than the threshold then filtering out 
+
+                ####filtering EOS if EOS has occured with the value leess than the threshold then filtering out
                 # ---------EoS threshold--------------------------------
                 not_eos_mask=(local_best_ids==self.eos_id)
                 ###EOS scores and ids ,Non EOS score and IDs
@@ -319,22 +323,22 @@ class Decoder(nn.Module):
                 #####filter out using outer product
 
                 NON_EOS_mask,NON_EOS_mask_ids=torch.max(local_best_scores*~not_eos_mask +not_eos_mask*-1000,dim=1)
-                EOS_mask,EOS_mask_ids=torch.max(local_best_scores*not_eos_mask +~not_eos_mask*-1000,dim=1)               
+                EOS_mask,EOS_mask_ids=torch.max(local_best_scores*not_eos_mask +~not_eos_mask*-1000,dim=1)
 
                 EOS_out=EOS_mask>gamma*NON_EOS_mask
 
                 EOS_SCORE_MASK=(not_eos_mask.transpose(0,1)*EOS_out).transpose(0,1)
-                local_best_scores=local_best_scores-(not_eos_mask*1*~EOS_SCORE_MASK*1000.0)        
-                #--------------------------------------------------------              
+                local_best_scores=local_best_scores-(not_eos_mask*1*~EOS_SCORE_MASK*1000.0)
+                #--------------------------------------------------------
                 #repeat the prefixes beam times
                 ys_1=torch.repeat_interleave(ys,beam,0)
                 score_2=torch.repeat_interleave(score_1,beam,0)
-                
+
                 #breakpoint()
                 #hin,cin = RNNLM_states
                 #hout=torch.repeat_interleave(hin,beam,1)
-                #cout=torch.repeat_interleave(cin,beam,1)               
-                 
+                #cout=torch.repeat_interleave(cin,beam,1)
+
                 #----------------------------------------------------
                 present_ids=(local_best_ids).contiguous().view(-1,1)
                 present_scores=(local_best_scores).contiguous().view(-1,1)
@@ -352,20 +356,20 @@ class Decoder(nn.Module):
                 #----------------------------------------------------
                 ###regrouping acording to utterances after selecting top K this is needed for gathering as per topk
                 ys=ys.view(batch_size,hyps*beam,-1)
-                score_1=score_1.view(batch_size,hyps*beam,-1)               
+                score_1=score_1.view(batch_size,hyps*beam,-1)
                 #----------------------------------------------------
                 ###prunng the output using gather
                 #selecting the top labels and scores
                 ys=torch.gather(ys,1,selecting_index)
                 score_1=torch.gather(score_1,1,selecting_index)
-                
+
                 #------------------------------------------
                 ##Lm_stff
                 if Is_RNNLM_used:
                         ### Need to select the corresponding hidden states w.r.t. 'ys' messing it will keep you unhappy
                         hin,cin = RNNLM_states
                         hin_int=torch.repeat_interleave(hin,beam,1)
-                        cin_int=torch.repeat_interleave(cin,beam,1)       
+                        cin_int=torch.repeat_interleave(cin,beam,1)
                         RNNLM_selecting_index=torch.cat([al2]*hin.size(2),dim=2)
                         RNNLM_selecting_index=torch.cat([RNNLM_selecting_index]*hin.size(0),dim=0)
                         hout=torch.gather(hin_int,1,RNNLM_selecting_index)
@@ -377,7 +381,7 @@ class Decoder(nn.Module):
                 ys=ys.view(batch_size*hyps,-1)
                 score_1=score_1.view(batch_size*hyps,-1)
                 ####################################################
-                #----------Eos servived the past iteration then it is 
+                #----------Eos servived the past iteration then it is
                 #acccepted EOS so no new labels after EOS, score, should be set to zero otherwise we get bad hypotheis
                 if i>1:
                      selected_EOS=torch.eq(ys[:,-2],self.eos_id)
@@ -389,23 +393,24 @@ class Decoder(nn.Module):
 ##======================================================================================================
 ##======================================================================================================
     def recognize_batch_beam_autoreg_LM_multi_hyp(self, encoder_outputs, beam,Am_weight,gamma,LM_model,len_pen,args):
-        """Beam search, decode one utterence now. 
-        Args: encoder_outputs: T x H, 
-        char_list: list of character, args: args.beam, 
+        """Beam search, decode one utterence now.
+        Args: encoder_outputs: T x H,
+        char_list: list of character, args: args.beam,
         Returns: nbest_hyps: """
-       
-        
-        enc_out_len = encoder_outputs.size(1)       
+
+        # import pdb
+        # pdb.set_trace()
+        enc_out_len = encoder_outputs.size(1)
         #----------------------------
         maxlen=int(enc_out_len*len_pen)
 
         ### This works but can be increased but it takes memory, can be increased Works ---Memory?
         hyps=beam
         len_bonus = float(args.len_bonus)
-        #breakpoint()
+        # breakpoint()
         #----------------------------
         print("beam,hyps,len_pen,maxlen,enc_out_len,Am_weight",beam,hyps,len_pen,maxlen,enc_out_len,Am_weight)
-        
+
         batch_size = encoder_outputs.size(0)
         ys = torch.ones(batch_size*hyps,1).fill_(self.sos_id).type_as(encoder_outputs).long()
         score_1=torch.zeros_like(ys).float()
@@ -414,7 +419,7 @@ class Decoder(nn.Module):
         #===========================
         ###LM Stuff
         Is_RNNLM_used = 1 if 'RNNLM' in str(type(LM_model)) else 0
-        
+
         if Is_RNNLM_used:
             h0, c0 = LM_model.Initialize_hidden_states(ys.shape[0])
             RNNLM_states = (h0,c0)
@@ -427,13 +432,13 @@ class Decoder(nn.Module):
         scores_list=[]
         start_collecting=False
         for i in range(maxlen):
-            
-       
-            #----------------------------------------------------  
-            ## if loop to use or not an LM (or) skip the LM for the first step
-            ## 
 
-            if Am_weight==1: 
+
+            #----------------------------------------------------
+            ## if loop to use or not an LM (or) skip the LM for the first step
+            ##
+
+            if Am_weight==1:
                 #print("not using a LM")
                 COMB_AM_MT_local_scores,scores_list,present_label,dec_output_Bneck=self.prediction_from_trained_model(ys,rep_encoder_outputs,scores_list)
             else:
@@ -461,10 +466,12 @@ class Decoder(nn.Module):
 
                         ##Done with rnnlm
 
-                ####0.5 to 1.5 
+                ####0.5 to 1.5
                 COMB_AM_MT_local_scores = Am_weight * AM_local_scores + (1-Am_weight) * LM_local_scores
             #-------------------------------------------------------------------------------------------------------------------------
-            ys,score_1,RNNLM_states = self.prediction_from_trained_model_beam_Search(i,ys,score_1,COMB_AM_MT_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used,RNNLM_states)
+            ys,score_1,RNNLM_states = self.prediction_from_trained_model_beam_Search(
+                i,ys,score_1,COMB_AM_MT_local_scores,beam,hyps,gamma,batch_size,Is_RNNLM_used,RNNLM_states
+            )
 
 
 
@@ -485,7 +492,7 @@ class Decoder(nn.Module):
         #----------------------------------------------------
         ys=nn.utils.rnn.pad_sequence(store_ended_hyps,batch_first=True,padding_value=self.eos_id)
         score_1=nn.utils.rnn.pad_sequence(store_ended_LLR,batch_first=True,padding_value=np.log(len_bonus))
-        
+
         #producing the correct_order
         #----------------------------------------------------
         # XS=[torch.sum(i) for i in store_ended_LLR]
@@ -496,11 +503,11 @@ class Decoder(nn.Module):
 
         _,correct_sorted_order = torch.sort(torch.sum(score_1,dim=1),descending=True)
         #----------------------------------------------------
-       
+
         ys=ys[correct_sorted_order]
         score_1=score_1[correct_sorted_order]
         ##------------------------------
-        print(ys,torch.sum(score_1,dim=1))    
+        print(ys,torch.sum(score_1,dim=1))
         #breakpoint()
         #--------------------------------
         return ys,score_1
@@ -508,14 +515,14 @@ class Decoder(nn.Module):
     ######################################################################
     ######################################################################
     def get_charecters_for_sequences(self,input_tensor):
-        """ Takes pytorch tensors as in put and print the text charecters as ouput,  
-        replaces sos and eos as unknown symbols and ?? and later deletes them from the output string 
+        """ Takes pytorch tensors as in put and print the text charecters as ouput,
+        replaces sos and eos as unknown symbols and ?? and later deletes them from the output string
         """
         output_text_seq=[]
         final_token_seq=input_tensor.data.numpy()
         final_token_seq=np.where(final_token_seq>=self.pad_index,self.Word_SIL_tok,final_token_seq)
         text_sym_sil_tok=self.Word_model.DecodeIds([self.Word_SIL_tok])
-        
+
         for i in final_token_seq:
             i=i.astype(np.int).tolist()
             text_as_string=self.Word_model.DecodeIds(i)
@@ -563,7 +570,7 @@ def cal_loss(pred, gold,IGNORE_ID,normalize_length,smoothing):
         log_prb = F.log_softmax(pred, dim=1)
         non_pad_mask = gold.ne(IGNORE_ID)
         n_word = non_pad_mask.sum().item()
-        loss = -(one_hot * log_prb).sum(dim=1)   
+        loss = -(one_hot * log_prb).sum(dim=1)
 
         loss = loss.masked_select(non_pad_mask).sum() / n_word
 
@@ -572,6 +579,3 @@ def cal_loss(pred, gold,IGNORE_ID,normalize_length,smoothing):
                                ignore_index=IGNORE_ID,
                                reduction='elementwise_mean')
     return loss
-
-
-

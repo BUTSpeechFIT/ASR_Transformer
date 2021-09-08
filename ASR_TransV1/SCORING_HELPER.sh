@@ -1,5 +1,13 @@
-#!/usr/bin/bash 
+#!/usr/bin/bash
 
+if [ $# -ne 1 ]; then
+    echo "$0 <log_path>"
+    exit
+fi
+
+PRE=/mnt/matylda4/kesiraju/code/ASR_Transformer
+
+scoring_path=${PRE}/ASR_TransV1/scoring
 
 log_path=$1
 

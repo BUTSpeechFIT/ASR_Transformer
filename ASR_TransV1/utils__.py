@@ -53,14 +53,14 @@ def saving_model(mdl,epoch,cost):
 #===============================================================================================
 def xavier_uniform(m, gain):
                 nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain(gain))
-                if m.bias is not None:  
+                if m.bias is not None:
                         m.bias.data.fill_(0)
 
 #================================================================================================
 def weights_init(m):
         if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
-                if m.bias is not None:  
+                if m.bias is not None:
                         m.bias.data.fill_(0)
 
         # if isinstance(m, nn.Conv1d):
@@ -70,7 +70,7 @@ def weights_init(m):
 
         #if isinstance(m, nn.Embedding):
         #        m.weight.data.normal_(0, 1)
-        
+
         ##added for the check
         # if isinstance(m, nn.Conv2d):
         #         nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
@@ -140,7 +140,7 @@ def weights_init_tanh(m):
                         m.bias.data.fill_(0)
 
         ##added for the check
-        ##i use conv2d with relu        
+        ##i use conv2d with relu
         if isinstance(m, nn.Conv2d):
                 nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('tanh'))
                 if m.bias is not None:
@@ -151,7 +151,7 @@ def reduce_learning_rate(optimizer):
         for param_group in optimizer.param_groups:
                 lr=param_group['lr']
                 param_group['lr'] = lr/2
-                print("learning rate hse been reduced from ",lr,"to ",lr/2)     
+                print("learning rate hse been reduced from ",lr,"to ",lr/2)
 #===============================================================================================
 ###########################################################
 #==========================================================
@@ -169,7 +169,7 @@ def subsampling(a):
 def subsampling_2(a):
         ln=a.size()[1]
 
-        b=a if (ln%2==0) else a[:,:-1,:]        
+        b=a if (ln%2==0) else a[:,:-1,:]
 
         c=torch.cat((b[:,::2,:],b[:,1::2,:]),2)
 
@@ -234,7 +234,7 @@ def batch_torch_subsamp(smp_feat):
 
         if feat_L%2==0:
                 smp_feat=smp_feat
-        else:   
+        else:
                 z_b=smp_feat[-1,:,:].unsqueeze(0)
                 #Z_b=np.zeros((smp_feat.shape[0],1,smp_feat.shape[2]),dtype=float)
                 smp_feat=torch.cat((smp_feat,Z_b),1)
@@ -266,7 +266,7 @@ def split_list(the_list, chunk_size):
 #===================================================
 
 import matplotlib
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 matplotlib.pyplot.viridis()
 def plotting(name,attention_map):

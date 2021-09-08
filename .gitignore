@@ -1,8 +1,11 @@
+# folders
 models/
 __pycache__/
+how2_data_prep/
+how2_feats_scp/
 
-
-# nfs files
+# files
+STEPS.txt
+*.py[cod]
 .nfs*
-
 *.swp

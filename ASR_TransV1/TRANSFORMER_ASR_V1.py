@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import pdb 
+import pdb
 from torch.autograd import Variable
 
 
@@ -24,7 +24,7 @@ from keras.preprocessing.sequence import pad_sequences
 
 import sys
 import kaldi_io
-sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
+# sys.path.insert(0,'/mnt/matylda3/vydana/HOW2_EXP/ASR_Transformer/ASR_TransV1')
 from CMVN import CMVN
 from utils__ import weights_init,count_parameters
 
@@ -33,7 +33,7 @@ from utils__ import weights_init,count_parameters
 class Transformer(nn.Module):
     """An encoder-decoder framework only includes attention. """
     def __init__(self,args):
-        super(Transformer, self).__init__()   
+        super(Transformer, self).__init__()
         self.label_smoothing = args.label_smoothing
 
         if args.conv_model=='Conv_2D_4Layers':
@@ -42,11 +42,11 @@ class Transformer(nn.Module):
         else:
             from Trans_conv_layers import Conv_2D_Layers
         #print("using conv layers",Conv_2D_Layers)
-        
+
         #----------------------------------
         #----------------------------------
         if args.encoder=='conformer':
-           from Conf_Encoder import Encoder 
+           from Conf_Encoder import Encoder
         elif args.encoder=='Fnet':
             from Trans_Fnet_encoder import Encoder
         else:
@@ -67,7 +67,7 @@ class Transformer(nn.Module):
     def forward(self, padded_input,padded_target):
         ###conv layers
         conv_padded_input=self.conv_layers(padded_input)
-        
+
         #General Transformer ASR model
         encoder_padded_outputs, *_ = self.encoder(conv_padded_input)
         #
@@ -76,29 +76,33 @@ class Transformer(nn.Module):
     #=============================================================================================================
     #=============================================================================================================
     def predict(self, feat_path,args):
+        import pdb
+        pdb.set_trace()
         print("went to the decoder loop")
         with torch.no_grad():
 
-                #### read feature matrices 
+                #### read feature matrices
                 smp_feat=kaldi_io.read_mat(feat_path)
                 smp_feat=CMVN(smp_feat)
-                input=torch.from_numpy(smp_feat)       
+                input=torch.from_numpy(smp_feat)
                 input = Variable(input.float(), requires_grad=False).double().float()
                 input=input.unsqueeze(0)
-                
+
                 #print("args.LM_model,args.Am_weight,args.beam,args.gamma,args.len_pen",args.LM_model,args.Am_weight,args.beam,args.gamma,args.len_pen)
                 ###conv layers
                 conv_padded_input=self.conv_layers(input)
 
                 #General Transformer ASR model
                 encoder_padded_outputs, *_ = self.encoder(conv_padded_input)
-                nbest_hyps,scoring_list = self.decoder.recognize_batch_beam_autoreg_LM_multi_hyp(encoder_padded_outputs,args.beam,args.Am_weight,args.gamma,args.LM_model,args.len_pen,args)
+                nbest_hyps,scoring_list = self.decoder.recognize_batch_beam_autoreg_LM_multi_hyp(
+                    encoder_padded_outputs,args.beam,args.Am_weight,args.gamma,args.LM_model,args.len_pen,args
+                )
                 #===================================================================================
                 beam_len = nbest_hyps.size(0)
                 hyp = {'score': 0.0, 'yseq': None,'state': None, 'alpha_i_list':None, 'Text_seq':None}
                 #===============================================
                 Output_dict=[]
-                for I in range(beam_len):    
+                for I in range(beam_len):
                     new_hyp={}
                     new_hyp['yseq'] = nbest_hyps[I]
                     new_hyp['score'] = scoring_list[I].sum()
@@ -122,7 +126,7 @@ class TransformerOptimizer(object):
     def __init__(self, optimizer, k, d_model, step_num, warmup_steps=4000):
         self.optimizer = optimizer
         self.k = k
-        
+
         #present_lr=[param_group['lr'] for param_group in self.optimizer.param_groups]
         self.init_lr = d_model ** (-0.5)
         self.warmup_steps = warmup_steps
@@ -139,7 +143,7 @@ class TransformerOptimizer(object):
         self.step_num += 1
         lr = self.k * self.init_lr * min(self.step_num ** (-0.5),
                                          self.step_num * (self.warmup_steps ** (-1.5)))
-        
+
         #print(lr,self.step_num ** (-0.5),self.step_num * self.warmup_steps ** (-1.5),self.reduction_factor)
 
         for param_group in self.optimizer.param_groups:
@@ -160,7 +164,7 @@ class TransformerOptimizer(object):
     def reduce_learning_rate(self, k):
         self.reduction_factor = self.reduction_factor*k
         #print(self.reduction_factor)
-    
+
     def print_lr(self):
         present_lr=[param_group['lr'] for param_group in self.optimizer.param_groups]
         return present_lr[0]

@@ -25,15 +25,15 @@ from Prune_the_sequences import prune_ngrams
 #=========================================================================================================================================
 def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args):
     #-----------------------------------
-    """ If you see best-hypothesis having worse WER that the remainig beam them tweak with the beam hyperpearmaeters Am_wt, len_pen, gamma 
+    """ If you see best-hypothesis having worse WER that the remainig beam them tweak with the beam hyperpearmaeters Am_wt, len_pen, gamma
      	If you see best-hypothesis having better performance than the oothers in the beam then improve the model training
     """
     #-----------------------------------
-    #import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
     for line in scp_paths_decoding:
         line=line.strip()
         key=line.split(' ')[0]
-        
+
         feat_path=line.split(' ')[1:]
         feat_path=feat_path[0].strip()
 
@@ -81,11 +81,11 @@ def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args
                             pname=str(key) +'_beam_'+str(ind)
                             plotting_name=join(plot_path_name,pname)
                             plotting(plotting_name,attention_record)
-            
+
             #-----------------------------------
             #import pdb;pdb.set_trace()
 
-            
+
             prune_output_sequences=1
             if prune_output_sequences:
                 print("******pruning_ngarms*******")
@@ -109,12 +109,12 @@ def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args
                     if Text_seq_formatted==[]:
                        Text_seq_formatted.append('<UNK>')
                     #======================================================================================
-                    ####Word_model to replace 
+                    ####Word_model to replace
                     if '__word.model' in args.Word_model_path:
                         word_model_path = args.Word_model_path.replace('.model','.vocab')
                         f=open(word_model_path,'r')
                         F=f.readlines()
-                          
+
                         vocab_dict = {word.strip().split('\t')[0].replace('▁',''):word.strip().split('\t')[0].replace('▁','') for word in F}
                         True_label = [vocab_dict.get(word,'<UNK>') for word in True_label]
                     #======================================================================================
@@ -139,7 +139,7 @@ def get_cer_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args
 #=========================================================================================================================================
 def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,args):
     #-----------------------------------
-    """ If you see best-hypothesis having worse WER that the remainig beam them tweak with the beam hyperpearmaeters Am_wt, len_pen, gamma 
+    """ If you see best-hypothesis having worse WER that the remainig beam them tweak with the beam hyperpearmaeters Am_wt, len_pen, gamma
         If you see best-hypothesis having better performance than the oothers in the beam then improve the model training
     """
     #-----------------------------------
@@ -147,7 +147,7 @@ def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,arg
     for line in scp_paths_decoding:
         line=line.strip()
         key=line.split(' ')[0]
-        
+
         feat_path=line.split(' ')[1:]
         feat_path=feat_path[0].strip()
 
@@ -161,7 +161,7 @@ def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,arg
         True_label=text_file_dict.get(key,None)
         #-----------------------------------
 
-        
+
         llr=[item.get('score').unsqueeze(0) for item in Output_seq]
         norm_llr=torch.nn.functional.softmax(torch.cat(llr,dim=0),dim=0)
 
@@ -194,7 +194,7 @@ def get_Bleu_for_beam(scp_paths_decoding,model,text_file_dict,plot_path_name,arg
                             pname=str(key) +'_beam_'+str(ind)
                             plotting_name=join(plot_path_name,pname)
                             plotting(plotting_name,attention_record)
-            
+
             #-----------------------------------
             #-----------------------------------
             if True_label:

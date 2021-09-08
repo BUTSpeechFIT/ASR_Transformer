@@ -36,7 +36,8 @@
 #model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data3K"
 #model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc12_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_Finetuned_HOW2_data5k"
 
-model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc18_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_CTC"
+#model_dir="/mnt/matylda3/vydana/HOW2_EXP/IWSLT2021_ASR/models/Librispeech_Transformer_ASR_enc18_1024_4096_dec6_1024_4096_15K_accm1_lc_rm_16H_CTC"
+model_dir="/mnt/matylda4/kesiraju/code/ASR_Transformer/models/how2/Transformer_T4_how2/"
 SWA_random_tag="$RANDOM"
 est_cpts=8
 
