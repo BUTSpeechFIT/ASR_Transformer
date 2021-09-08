@@ -1,0 +1,8 @@
+models/
+__pycache__/
+
+
+# nfs files
+.nfs*
+
+*.swp
