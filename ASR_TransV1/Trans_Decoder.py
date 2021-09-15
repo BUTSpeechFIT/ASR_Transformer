@@ -507,7 +507,7 @@ class Decoder(nn.Module):
         ys=ys[correct_sorted_order]
         score_1=score_1[correct_sorted_order]
         ##------------------------------
-        print(ys,torch.sum(score_1,dim=1))
+        # print(ys,torch.sum(score_1,dim=1))
         #breakpoint()
         #--------------------------------
         return ys,score_1
